@@ -26,13 +26,14 @@ class Store_Keeper():
             data = csv.reader(csvfile)
             next(data)
             for row in data:
-                name = row[0]
-                price = self.clean_price(row[1])
-                quanity = row[2]
-                date = self.clean_date(row[3])
-                new_product = Product(name=name, price=price, quanity=quanity, date=date)
-                print(new_product)
-                session.add(new_product)
+                product_in_db = session.query(Product).filter(Product.name==row[0]).one_or_none()
+                if product_in_db == None:
+                    name = row[0]
+                    price = self.clean_price(row[1])
+                    quanity = row[2]
+                    date = self.clean_date(row[3])
+                    new_product = Product(name=name, price=price, quanity=quanity, date=date)
+                    session.add(new_product)
             session.commit()
             
 
