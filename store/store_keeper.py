@@ -4,13 +4,20 @@ import csv
 import time
 
 class Store_Keeper():
-    
+
+
     def clean_price(self, price_str):
-        float_price = price_str.replace("$", "")
-        float_price = float(float_price)
-        return int(float_price * 100)
-    
-    
+        try:
+            float_price = price_str.replace("$", "")
+            float_price = float(float_price)
+        except ValueError:
+            input('''\rThe format did not match what is expected
+                  \nEX: 14.25
+                  \nPress "Enter" to continue''')
+        else:
+            return int(float_price * 100)
+
+
     def clean_date(self, date_str):
         split_date = date_str.split("/")
         year = int(split_date[2])
@@ -19,8 +26,8 @@ class Store_Keeper():
         return_Date = datetime.date(year, month, day)
         
         return return_Date
-    
-    
+
+
     def view_product(self):
         available_products = []
         for product in session.query(Product):
@@ -28,7 +35,6 @@ class Store_Keeper():
         error_warning = True
         while error_warning:
             try:
-                
                 print(f'''\nAvailable product IDs\r{available_products}''')
                 user_choice = input("Select what product ID you would like to view.  ")
                 user_choice = int(user_choice)
@@ -45,14 +51,44 @@ class Store_Keeper():
                 input(f'''You entered an incorrect value. Press "Enter" to try again. ''')
             except AttributeError:
                  input(f'''You entered an incorrect value. Press "Enter" to try again. ''')
-        print("Outside the While block")
+        time.sleep(2)
+        self.edit_product_menu(view_product)
 
 
-def edit_product(self):
-    available_inputs =["1", "2", "3"]
-    user_input = input('''\rWhat would you like to do?
-                       \n   1. Edit Product
-                       \n   2. Check Profuct Profit''')
+    def edit_product_menu(self, product):
+        user_input = input('''\rWhat would you like to edit?
+                        \n   1. Name
+                        \n   2. Price
+                        \n   3. Quanity
+                        \n   4. Date Last Updated
+                        
+                        \n   5. Return to main menu 
+                        \r   ''')
+        if user_input == "1" or "name" in user_input.lower():
+            self.edit_name(product)
+        elif user_input == "2" or "price" in user_input.lower():
+            self.edit_price(product)
+        session.commit()
+
+
+    def edit_name(self, product):
+        print(f"The current product name is: {product.product_name}")
+        new_name = input("What would you like to change the name to?  ")
+        product.product_name = new_name
+
+
+    def edit_price(self, product):
+        error_check = True
+        while error_check:
+            print(f"The current price is set at: ${product.product_price / 100}")
+            new_price = input("What would you like the new price to be set at(ex: $4.23)"  )
+            new_price = self.clean_price(new_price)
+            print(type(new_price))
+            if type(new_price) == int:
+                product.product_price = new_price
+                error_check = False
+           
+        
 
 
     def add_csv(self):
