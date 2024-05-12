@@ -6,26 +6,46 @@ import time
 class Store_Keeper():
 
 
-    def clean_price(self, price_str):
-        try:
-            float_price = price_str.replace("$", "")
-            float_price = float(float_price)
-        except ValueError:
-            input('''\nThe format did not match what is expected
-                  \nEX: 14.25
-                  \nPress "Enter" to continue''')
-        else:
-            return int(float_price * 100)
+    def add_csv(self):
+            with open("../inventory.csv") as csvfile:
+                data = csv.reader(csvfile)
+                next(data)
+                for row in data:
+                    product_in_db = session.query(Product).filter(Product.product_name==row[0]).one_or_none()
+                    if product_in_db == None:
+                        name = row[0]
+                        price = self.clean_price(row[1])
+                        quanity = row[2]
+                        date = self.clean_date(row[3])
+                        new_product = Product(product_name=name, product_price=price, product_quantity=quanity, date_updated=date)
+                        session.add(new_product)
+                session.commit()
 
 
-    def clean_date(self, date_str):
-        split_date = date_str.split("/")
-        year = int(split_date[2])
-        month = int(split_date[0])
-        day = int(split_date[1])
-        return_Date = datetime.date(year, month, day)
+    def main_menu(self):
         
-        return return_Date
+        Base.metadata.create_all(engine)
+        menu_options = ["V", "A", "B"]
+        print("Welcome to Store Keeper\n\n")
+        input_error = True
+        while input_error:
+            user_choice = input('''
+                  \rPlease choose one of the following option
+                  \n Press "V" to view a product
+                  \n Press "A" to add a new product
+                  \n Press "B" to make a back up of the store data
+                  
+                  ''')
+            if user_choice[0].upper() in menu_options:
+                input_error = False
+                if user_choice.upper() == "V":
+                    self.view_product()
+                elif user_choice.upper() == "A":
+                    self.add_product()
+                elif user_choice.upper() == "B":
+                    self.make_backup()
+            else:
+                print("You entered an incorect command, please try again.")
 
 
     def view_product(self):
@@ -55,13 +75,59 @@ class Store_Keeper():
         self.edit_product_menu(view_product)
 
 
+    def check_total_price(self, product):
+            print(f"Estimated profit with current price and quantity: ${product.product_quantity * product.product_price / 100}")
+            return product.product_quantity * product.product_price
+
+
     def add_product(self):
-        print("Enter new product information to add.")
-        new_name = self.new_name()
-        new_price = self.new_price()
-        new_quanity = self.new_quantity()
-        new_date = self.update_now()
-        print(new_name, new_price, new_quanity, new_date)
+            print("Enter new product information to add.")
+            new_name = self.new_name()
+            new_price = self.new_price()
+            new_quanity = self.new_quantity()
+            new_date = self.update_now()
+            
+            new_product = Product(product_name=new_name, product_price=new_price, product_quantity=new_quanity, date_updated=new_date)
+            session.add(new_product)
+            session.commit()
+
+
+    def make_backup(self):
+        with open("backup_db.csv", "w") as csvfile:
+            field_names = ["Product ID", "Product Name", "Price", "Quantity", "Last Updated"]
+            backup_writer = csv.DictWriter(csvfile, fieldnames=field_names)
+            backup_writer.writeheader()
+            for row in session.query(Product):
+                backup_writer.writerow({
+                    "Product ID": row.product_id,
+                    "Product Name": row.product_name,
+                    "Price": row.product_price,
+                    "Quantity": row.product_quantity,
+                    "Last Updated": row.date_updated,
+                })
+            
+
+
+    def clean_price(self, price_str):
+        try:
+            float_price = price_str.replace("$", "")
+            float_price = float(float_price)
+        except ValueError:
+            input('''\nThe format did not match what is expected
+                  \nEX: 14.25
+                  \nPress "Enter" to continue''')
+        else:
+            return int(float_price * 100)
+
+
+    def clean_date(self, date_str):
+        split_date = date_str.split("/")
+        year = int(split_date[2])
+        month = int(split_date[0])
+        day = int(split_date[1])
+        return_Date = datetime.date(year, month, day)
+        
+        return return_Date
 
 
     def new_name(self):
@@ -88,23 +154,6 @@ class Store_Keeper():
             else:    
                 error_check = False
                 return new_quantity
-
-
-    def edit_product_menu(self, product):
-        user_input = input('''\nWhat would you like to edit?
-                        \n   1. Name
-                        \n   2. Price
-                        \n   3. Quanity
-                        \n   4. Return to main menu
-                        \n      ''')
-        if user_input == "1" or "name" in user_input.lower():
-            self.edit_name(product)
-        elif user_input == "2" or "price" in user_input.lower():
-            self.edit_price(product)
-        elif user_input == "3" or "quanity" in user_input.lower():
-            self.edit_quanity(product)
-        print(product)
-        # session.commit()
 
 
     def edit_name(self, product):
@@ -147,26 +196,9 @@ class Store_Keeper():
         return current_date
 
 
-    def add_csv(self):
-        with open("../inventory.csv") as csvfile:
-            data = csv.reader(csvfile)
-            next(data)
-            for row in data:
-                product_in_db = session.query(Product).filter(Product.product_name==row[0]).one_or_none()
-                if product_in_db == None:
-                    name = row[0]
-                    price = self.clean_price(row[1])
-                    quanity = row[2]
-                    date = self.clean_date(row[3])
-                    new_product = Product(product_name=name, product_price=price, product_quantity=quanity, date_updated=date)
-                    session.add(new_product)
-            session.commit()
-
-
 
 
 if __name__ == "__main__":
-    Base.metadata.create_all(engine)
     newstore = Store_Keeper()
     newstore.add_csv()
-    newstore.add_product()
+    newstore.main_menu()
