@@ -1,4 +1,4 @@
-from model import (Base, session, Product, engine)
+from store.model import (Base, session, Product, engine)
 import datetime
 import csv
 import time
@@ -7,7 +7,7 @@ class Store_Keeper():
 
 
     def add_csv(self):
-            with open("../inventory.csv") as csvfile:
+            with open("inventory.csv") as csvfile:
                 data = csv.reader(csvfile)
                 next(data)
                 for row in data:
@@ -22,20 +22,22 @@ class Store_Keeper():
                 session.commit()
 
 
-    def main_menu(self):
-        
+    def app_intro(self):
         Base.metadata.create_all(engine)
-        menu_options = ["V", "A", "B"]
-        print("Welcome to Store Keeper\n\n")
+        self.add_csv()
+        print("Welcome to Store Keeper\nYou can view, add, edit and make back ups of your database.\n")
+        time.sleep(1)
+
+
+    def main_menu(self):
+        menu_options = ["V", "A", "B", "5"]
         input_error = True
+        print("*****MAIN MENU*****")
         while input_error:
-            user_choice = input('''
-                  \rPlease choose one of the following option
-                  \n Press "V" to view a product
-                  \n Press "A" to add a new product
-                  \n Press "B" to make a back up of the store data
-                  
-                  ''')
+            user_choice = input('''\rPlease choose one of the following option.
+                  \n Press "V" to view a product.
+                  \n Press "A" to add a new product.
+                  \n Press "B" to make a back up of the store data.\n ''')
             if user_choice[0].upper() in menu_options:
                 input_error = False
                 if user_choice.upper() == "V":
@@ -44,8 +46,127 @@ class Store_Keeper():
                     self.add_product()
                 elif user_choice.upper() == "B":
                     self.make_backup()
+                elif user_choice == "5":
+                    exit()
             else:
-                print("You entered an incorect command, please try again.")
+                self.incorrect_input()
+
+
+    def view_product_menu(self, product):
+        menu_options = ["1", "2", "3", "DEL", "4", "5"]
+        input_error = True
+        while input_error:
+            user_choice = input('''\rPlease choose one of the following option.
+                  \n Press "1" to edit selected product.
+                  \n Press "2" to view product possible total sales.
+                  \n Press "3" select a new product.
+                  \n Enter "DEL" to delete the product
+                  \n Press "4" return to Main Menu.
+                  \n Press "5" Exit.\n ''')
+            if user_choice in menu_options:
+                if user_choice == "1":
+                    self.edit_product_menu(product)
+                elif user_choice == "2":
+                    self.check_total_price(product)
+                elif user_choice == "3":
+                    self.view_product()
+                elif user_choice == "DEL":
+                    self.delete_product(product)
+                elif user_choice == "4":
+                    self.main_menu()
+                else:
+                    quit()
+                input_error = False
+            else:
+                print(user_choice)
+                self.incorrect_input()
+
+
+    def edit_product_menu(self, product):
+        menu_options = ["1", "2", "3", "4", "5"]
+        input_error = True
+        while input_error:
+            user_choice = input('''\rWhat would you like to edit?
+                  \n Press "1" edit Product Name.
+                  \n Press "2" edit Product Price.
+                  \n Press "3" edit Product Quantity.
+                  \n Press "4" return to Main Menu.
+                  \n Press "5" Exit.\n ''')
+            if user_choice in menu_options:
+                if user_choice == "1":
+                    self.edit_name(product)
+                elif user_choice == "2":
+                    self.edit_price(product)
+                elif user_choice == "3":
+                    self.edit_quanity()
+                elif user_choice == "4":
+                    self.main_menu()
+                else:
+                    quit()
+                input_error = False
+            else:
+                self.incorrect_input()
+        session.commit()
+        self.edit_product_sub_menu(product)
+
+
+    def edit_product_sub_menu(self, product):
+        menu_options = ["1", "2", "4", "5"]
+        input_error = True
+        while input_error:
+            user_choice = input('''\rPlease choose one of the following option.
+                  \n Press "1" edit another attribute of selected product.
+                  \n Press "2" select another product.
+                  \n Press "4" return to Main Menu.
+                  \n Press "5" Exit.\n ''')
+            if user_choice in menu_options:
+                if user_choice == "1":
+                    self.edit_product_menu(product)
+                elif user_choice == "2":
+                    self.view_product()
+                elif user_choice == "4":
+                    self.main_menu()
+                else:
+                    quit()
+                input_error = False
+            else:
+                self.incorrect_input()
+
+
+    def add_product_sub_menu(self):
+        menu_options = ["1", "4", "5"]
+        input_error = True
+        while input_error:
+            user_choice = input('''\rPlease choose one of the following option.
+                  \n Press "1" to add another product
+                  \n Press "4" return to Main Menu.
+                  \n Press "5" Exit.\n ''')
+            if user_choice in menu_options:
+                if user_choice == "1":
+                    self.add_product()
+                elif user_choice == "4":
+                    self.main_menu()
+                else:
+                    quit()
+                input_error = False
+            else:
+                self.incorrect_input()
+
+
+    def main_menu_exit(self):
+        menu_options = [ "4", "5"]
+        input_error = True
+        while input_error:
+            user_choice = input('''\rPress "4" return to Main Menu.
+                \n Press "5" Exit.\n ''')
+            if user_choice in menu_options:
+                if user_choice == "4":
+                    self.main_menu()
+                else:
+                    quit()
+                input_error = False
+            else:
+                self.incorrect_input()
 
 
     def view_product(self):
@@ -58,12 +179,12 @@ class Store_Keeper():
                 print(f'''\nAvailable product IDs\n{available_products}''')
                 user_choice = input("Select what product ID you would like to view.  ")
                 user_choice = int(user_choice)
-                view_product = session.query(Product).filter(Product.product_id==int(user_choice)).first()
+                product = session.query(Product).filter(Product.product_id==int(user_choice)).first()
                 print(f'''
-                    \nName: {view_product.product_name}
-                    \nQuanity: {view_product.product_quantity}
-                    \nPrice: ${view_product.product_price / 100}
-                    \nLast Updated: {datetime.date.strftime(view_product.date_updated, "%b %d, %Y")}
+                    \nName: {product.product_name}
+                    \nQuanity: {product.product_quantity}
+                    \nPrice: ${product.product_price / 100}
+                    \nLast Updated: {datetime.date.strftime(product.date_updated, "%b %d, %Y")}
                     ''')
                 error_warning = False
                 
@@ -71,13 +192,18 @@ class Store_Keeper():
                 input(f'''You entered an incorrect value. Press "Enter" to try again. ''')
             except AttributeError:
                  input(f'''You entered an incorrect value. Press "Enter" to try again. ''')
-        time.sleep(1)
-        self.edit_product_menu(view_product)
+        self.view_product_menu(product)
 
 
     def check_total_price(self, product):
-            print(f"Estimated profit with current price and quantity: ${product.product_quantity * product.product_price / 100}")
-            return product.product_quantity * product.product_price
+        print(f"Estimated profit with current price and quantity: ${product.product_quantity * product.product_price / 100}")
+        self.view_product_sub_menu(product)
+
+
+    def delete_product(self, product):
+        session.delete(product)
+        session.commit()
+        self.main_menu_exit()
 
 
     def add_product(self):
@@ -90,10 +216,13 @@ class Store_Keeper():
             new_product = Product(product_name=new_name, product_price=new_price, product_quantity=new_quanity, date_updated=new_date)
             session.add(new_product)
             session.commit()
+            self.add_product_sub_menu()
 
 
     def make_backup(self):
-        with open("backup_db.csv", "w") as csvfile:
+        filename = input("Please enter the new file name or existing file to create a back up with.  ")
+        filename = f"{filename}.csv"
+        with open(filename, "w") as csvfile:
             field_names = ["Product ID", "Product Name", "Price", "Quantity", "Last Updated"]
             backup_writer = csv.DictWriter(csvfile, fieldnames=field_names)
             backup_writer.writeheader()
@@ -105,7 +234,7 @@ class Store_Keeper():
                     "Quantity": row.product_quantity,
                     "Last Updated": row.date_updated,
                 })
-            
+        self.main_menu_exit()
 
 
     def clean_price(self, price_str):
@@ -196,9 +325,16 @@ class Store_Keeper():
         return current_date
 
 
+    def incorrect_input(self):
+        input("Your input was not valid pelase try again. Press 'Enter to continue'")
+
+
+    def run_app(self):
+        self.app_intro()
+        self.main_menu()
+
 
 
 if __name__ == "__main__":
     newstore = Store_Keeper()
-    newstore.add_csv()
-    newstore.main_menu()
+    newstore.run_app()
