@@ -221,6 +221,7 @@ class Store_Keeper():
             product = session.query(Product).filter(Product.product_name == new_name).first()
             product.product_price = new_price
             product.product_quantity = new_quanity
+            product.date_updated = new_date
         else:
             new_product = Product(product_name=new_name, product_price=new_price, product_quantity=new_quanity, date_updated=new_date)
             session.add(new_product)
