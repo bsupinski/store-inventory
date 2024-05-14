@@ -20,7 +20,7 @@ class Store_Keeper():
                         new_product = Product(product_name=name, product_price=price, product_quantity=quanity, date_updated=date)
                         session.add(new_product)
                     elif product_name_db.date_updated < self.clean_date(row[3]):
-                        product_name_db.product_price = row[1]
+                        product_name_db.product_price = self.clean_price(row[1])
                         product_name_db.product_quantity = row[2]
                         product_name_db.date_updated = self.clean_date(row[3])
                 session.commit()
@@ -187,7 +187,7 @@ class Store_Keeper():
                 print(f'''
                     \nName: {product.product_name}
                     \nQuanity: {product.product_quantity}
-                    \nPrice: ${product.product_price / 100}
+                    \nPrice: ${(product.product_price) / 100 :.2f}
                     \nLast Updated: {datetime.date.strftime(product.date_updated, "%b %d, %Y")}
                     ''')
                 error_warning = False
@@ -200,7 +200,7 @@ class Store_Keeper():
 
 
     def check_total_price(self, product):
-        print(f"Estimated profit with current price and quantity: ${product.product_quantity * product.product_price / 100}")
+        print(f"Estimated profit with current price and quantity: ${product.product_quantity * product.product_price / 100 :.2f}")
         self.view_product_sub_menu(product)
 
 
@@ -304,7 +304,7 @@ class Store_Keeper():
     def edit_price(self, product):
         error_check = True
         while error_check:
-            print(f"The current price is set at: ${product.product_price / 100}")
+            print(f"The current price is set at: ${product.product_price / 100 :.2f}")
             new_price = input("What would you like the new price to be set at(ex: $4.23)"  )
             new_price = self.clean_price(new_price)
             print(type(new_price))
