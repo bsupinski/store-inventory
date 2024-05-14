@@ -11,14 +11,18 @@ class Store_Keeper():
                 data = csv.reader(csvfile)
                 next(data)
                 for row in data:
-                    product_in_db = session.query(Product).filter(Product.product_name==row[0]).one_or_none()
-                    if product_in_db == None:
+                    product_name_db = session.query(Product).filter(Product.product_name==row[0]).one_or_none()
+                    if product_name_db == None:
                         name = row[0]
                         price = self.clean_price(row[1])
                         quanity = row[2]
                         date = self.clean_date(row[3])
                         new_product = Product(product_name=name, product_price=price, product_quantity=quanity, date_updated=date)
                         session.add(new_product)
+                    elif product_name_db.date_updated < self.clean_date(row[3]):
+                        product_name_db.product_price = row[1]
+                        product_name_db.product_quantity = row[2]
+                        product_name_db.date_updated = self.clean_date(row[3])
                 session.commit()
 
 
@@ -207,16 +211,21 @@ class Store_Keeper():
 
 
     def add_product(self):
-            print("Enter new product information to add.")
-            new_name = self.new_name()
-            new_price = self.new_price()
-            new_quanity = self.new_quantity()
-            new_date = self.update_now()
-            
+        print("Enter new product information to add.")
+        new_name = self.new_name()
+        new_price = self.new_price()
+        new_quanity = self.new_quantity()
+        new_date = self.update_now()
+        
+        if session.query(Product).filter(Product.product_name == new_name).first():
+            product = session.query(Product).filter(Product.product_name == new_name).first()
+            product.product_price = new_price
+            product.product_quantity = new_quanity
+        else:
             new_product = Product(product_name=new_name, product_price=new_price, product_quantity=new_quanity, date_updated=new_date)
             session.add(new_product)
-            session.commit()
-            self.add_product_sub_menu()
+        session.commit()
+        self.add_product_sub_menu()
 
 
     def make_backup(self):
@@ -337,4 +346,5 @@ class Store_Keeper():
 
 if __name__ == "__main__":
     newstore = Store_Keeper()
-    newstore.run_app()
+    Base.metadata.create_all(engine)
+    newstore.add_csv()
